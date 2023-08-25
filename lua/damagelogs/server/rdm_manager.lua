@@ -477,6 +477,16 @@ function HandlePlayerReport(ply, attacker, message, reportType)
     end
 
     UpdatePreviousReports()
+
+    local isPrevious = false
+    hook.Run("RDMManagerNewReport", 
+        ply, -- Victim
+        attacker, -- Attacker
+        Damagelog.Reports.Current[index].index, -- Report ID
+        isPrevious, -- Is a previous map
+        Damagelog.Reports.Current[index].message, -- Message from victim
+        Damagelog.Reports.Current[index] -- Report table
+    )
 end
 net.Receive("DL_ReportPlayer", function(len, ply)
     local length = net.ReadUInt(32)
@@ -653,6 +663,15 @@ net.Receive("DL_Conclusion", function(_len, ply)
         }
         Damagelog:DiscordMessage(discordUpdate)
     end
+
+    hook.Run("RDMManagerConclusionUpdated", 
+        tbl.admin, -- Admin
+        tbl.index, -- Report ID
+        previous, -- Is a previous map
+        notify, -- Is Notify
+        tbl.conclusion, -- New conclusion
+        tbl -- Report table
+    )
 end)
 
 hook_Add("PlayerAuthed", "RDM_Manager", function(ply)
@@ -728,6 +747,15 @@ function HandleReportedPlayerAnswer(ply, previous, text, index)
 
     Damagelog:SendLogToVictim(tbl)
     UpdatePreviousReports()
+
+    hook.Run("RDMManagerPlayerAnswer", 
+        victim, -- Victim
+        ply, -- Attacker
+        tbl.index, -- Report ID
+        previous, -- Is a previous map
+        tbl.response, -- Message from victim
+        tbl -- Report table
+    )
 end
 
 net.Receive("DL_SendAnswer", function(_, ply)
@@ -771,6 +799,15 @@ net.Receive("DL_GetForgive", function(_, ply)
             if IsValid(syncEnt) and not tbl.adminReport then
                 syncEnt:SetPendingReports(syncEnt:GetPendingReports() - 1)
             end
+
+            hook.Run("RDMManagerConclusionUpdated", 
+                tbl.admin, -- Admin
+                tbl.index, -- Report ID
+                previous, -- Is a previous map
+                true, -- Is Notify
+                tbl.conclusion, -- New conclusion
+                tbl -- Report table
+            )
         end
     else
         tbl.handedOffToAdminsAt = os.time()
@@ -837,6 +874,15 @@ net.Receive("DL_GetForgive", function(_, ply)
         reportHandled = nil
     }
     Damagelog:DiscordMessage(discordUpdate)
+
+    hook.Run("RDMManagerIsForgive", 
+        ply, -- Victim
+        attacker, -- Attacker
+        index, -- Report ID
+        previous, -- Is a previous map
+        forgive, -- Is forgive
+        tbl -- Report table
+    )
 end)
 
 net.Receive("DL_Answering", function(_len, ply)
