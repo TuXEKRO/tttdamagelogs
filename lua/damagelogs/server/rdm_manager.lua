@@ -478,16 +478,9 @@ function HandlePlayerReport(ply, attacker, message, reportType)
 
     UpdatePreviousReports()
 
-    local isPrevious = false
-    hook.Run("RDMManagerNewReport", 
-        ply, -- Victim
-        attacker, -- Attacker
-        Damagelog.Reports.Current[index].index, -- Report ID
-        isPrevious, -- Is a previous map
-        Damagelog.Reports.Current[index].message, -- Message from victim
-        Damagelog.Reports.Current[index] -- Report table
-    )
+    hook.Run("RDMManagerNewReport", Damagelog.Reports.Current[index])
 end
+
 net.Receive("DL_ReportPlayer", function(len, ply)
     local length = net.ReadUInt(32)
     local requestPayload = net.ReadData(length)
@@ -502,12 +495,7 @@ end)
 
 
 
-
-net.Receive("DL_UpdateStatus", function(_len, ply)
-    local previous = net.ReadUInt(1) == 1
-    local index = net.ReadUInt(16)
-    local status = net.ReadUInt(4)
-
+function HandleStatusUpdate(ply, previous, index, status)
     if not ply:CanUseRDMManager() then
         return
     end
@@ -527,7 +515,7 @@ net.Receive("DL_UpdateStatus", function(_len, ply)
     tbl.admin = status == RDM_MANAGER_WAITING and false or ply:Nick()
     local msg
         
-    hook.Run("RDMManagerStatusUpdated", ply, index, status, previous)
+    hook.Run("RDMManagerStatusUpdated", tbl, ply, status)
 
     if status == RDM_MANAGER_WAITING then
         msg = string_format(TTTLogTranslate(ply.DMGLogLang, "HasSetReport"), ply:Nick(), index, TTTLogTranslate(ply.DMGLogLang, "RDMWaiting"))
@@ -601,14 +589,17 @@ net.Receive("DL_UpdateStatus", function(_len, ply)
         }
         Damagelog:DiscordMessage(discordUpdate)
     end
-end)
+end
 
-net.Receive("DL_Conclusion", function(_len, ply)
-    local notify = net.ReadUInt(1) == 0
+net.Receive("DL_UpdateStatus", function(_len, ply)
     local previous = net.ReadUInt(1) == 1
     local index = net.ReadUInt(16)
-    local conclusion = net.ReadString()
+    local status = net.ReadUInt(4)
 
+    HandleStatusUpdate(ply, previous, index, status)
+end)
+
+function HandleConclusionUpdate(ply, notify, previous, index, conclusion)
     if not ply:CanUseRDMManager() then
         return
     end
@@ -664,14 +655,16 @@ net.Receive("DL_Conclusion", function(_len, ply)
         Damagelog:DiscordMessage(discordUpdate)
     end
 
-    hook.Run("RDMManagerConclusionUpdated", 
-        tbl.admin, -- Admin
-        tbl.index, -- Report ID
-        previous, -- Is a previous map
-        notify, -- Is Notify
-        tbl.conclusion, -- New conclusion
-        tbl -- Report table
-    )
+    hook.Run("RDMManagerConclusionUpdated", tbl, ply, tbl.conclusion )
+end
+
+net.Receive("DL_Conclusion", function(_len, ply)
+    local notify = net.ReadUInt(1) == 0
+    local previous = net.ReadUInt(1) == 1
+    local index = net.ReadUInt(16)
+    local conclusion = net.ReadString()
+
+    HandleConclusionUpdate(ply, notify, previous, index, conclusion)
 end)
 
 hook_Add("PlayerAuthed", "RDM_Manager", function(ply)
@@ -748,14 +741,7 @@ function HandleReportedPlayerAnswer(ply, previous, text, index)
     Damagelog:SendLogToVictim(tbl)
     UpdatePreviousReports()
 
-    hook.Run("RDMManagerPlayerAnswer", 
-        victim, -- Victim
-        ply, -- Attacker
-        tbl.index, -- Report ID
-        previous, -- Is a previous map
-        tbl.response, -- Message from victim
-        tbl -- Report table
-    )
+    hook.Run("RDMManagerAttackerResponded", tbl, tbl.response)
 end
 
 net.Receive("DL_SendAnswer", function(_, ply)
@@ -766,14 +752,7 @@ net.Receive("DL_SendAnswer", function(_, ply)
     HandleReportedPlayerAnswer(ply, previous, text, index)
 end)
 
-
-
-net.Receive("DL_GetForgive", function(_, ply)
-    local forgive = net.ReadUInt(1) == 1
-    local previous = net.ReadUInt(1) == 1
-    local index = net.ReadUInt(16)
-    local tbl = previous and Damagelog.Reports.Previous[index] or Damagelog.Reports.Current[index]
-
+function HandleForgiveReport(ply, forgive, previous, index, tbl)
     if not tbl then
         return
     end
@@ -800,14 +779,7 @@ net.Receive("DL_GetForgive", function(_, ply)
                 syncEnt:SetPendingReports(syncEnt:GetPendingReports() - 1)
             end
 
-            hook.Run("RDMManagerConclusionUpdated", 
-                tbl.admin, -- Admin
-                tbl.index, -- Report ID
-                previous, -- Is a previous map
-                true, -- Is Notify
-                tbl.conclusion, -- New conclusion
-                tbl -- Report table
-            )
+            hook.Run("RDMManagerConclusionUpdated", tbl, ply, tbl.conclusion )
         end
     else
         tbl.handedOffToAdminsAt = os.time()
@@ -875,14 +847,16 @@ net.Receive("DL_GetForgive", function(_, ply)
     }
     Damagelog:DiscordMessage(discordUpdate)
 
-    hook.Run("RDMManagerIsForgive", 
-        ply, -- Victim
-        attacker, -- Attacker
-        index, -- Report ID
-        previous, -- Is a previous map
-        forgive, -- Is forgive
-        tbl -- Report table
-    )
+    hook.Run("RDMManagerVictimResponded", tbl, forgive)
+end
+
+net.Receive("DL_GetForgive", function(_, ply)
+    local forgive = net.ReadUInt(1) == 1
+    local previous = net.ReadUInt(1) == 1
+    local index = net.ReadUInt(16)
+    local tbl = previous and Damagelog.Reports.Previous[index] or Damagelog.Reports.Current[index]
+
+    HandleForgiveReport(ply, forgive, previous, index, tbl)
 end)
 
 net.Receive("DL_Answering", function(_len, ply)
@@ -918,3 +892,20 @@ net.Receive("DL_ForceRespond", function(_len, ply)
         end
     end
 end)
+----------------------------------------------------
+----------------------------------------------------
+----------------------------------------------------
+----------------------------------------------------
+----------------------------------------------------
+----------------------------------------------------
+----------------------------------------------------
+----------------------------------------------------  FALTA HACER LOS SETTER DE LOS DOS 
+----------------------------------------------------
+----------------------------------------------------
+----------------------------------------------------
+----------------------------------------------------
+----------------------------------------------------
+----------------------------------------------------
+----------------------------------------------------
+----------------------------------------------------
+----------------------------------------------------
