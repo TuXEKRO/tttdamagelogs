@@ -1,5 +1,6 @@
 AddCSLuaFile("damagelogs/shared/defines.lua")
 AddCSLuaFile("damagelogs/config/config.lua")
+AddCSLuaFile("damagelogs/config/config_loader.lua")
 AddCSLuaFile("damagelogs/shared/lang.lua")
 AddCSLuaFile("damagelogs/shared/notify.lua")
 AddCSLuaFile("damagelogs/client/info_label.lua")
@@ -26,7 +27,7 @@ include("damagelogs/config/config_loader.lua")
 Damagelog:loadMySQLConfig()
 Damagelog:loadConfig()
 Damagelog:saveConfig()
-
+Damagelog.Config = Damagelog:getConfig() --Get the config in its table state for sending to clients.
 
 include("damagelogs/server/sqlite.lua")
 include("damagelogs/shared/lang.lua")
@@ -74,6 +75,7 @@ util.AddNetworkString("DL_RefreshDamagelog")
 util.AddNetworkString("DL_InformSuperAdmins")
 util.AddNetworkString("DL_Ded")
 util.AddNetworkString("DL_SendLang")
+util.AddNetworkString("DL_SendConfig")
 Damagelog.DamageTable = Damagelog.DamageTable or {}
 Damagelog.OldTables = Damagelog.OldTables or {}
 Damagelog.ShootTables = Damagelog.ShootTables or {}
@@ -82,6 +84,10 @@ Damagelog.SceneRounds = Damagelog.SceneRounds or {}
 
 net.Receive("DL_SendLang", function(_, ply)
     ply.DMGLogLang = net.ReadString()
+    --Send config once we know the client is running code, DL_SendLang is convenently send at the InitPostEntity event.    
+    net.Start("DL_SendConfig")
+    net.WriteTable(Damagelog.Config) --Not recommended but makes the config sync future proof.
+    net.Send(ply)
 end)
 
 local Player = FindMetaTable("Player")
@@ -174,6 +180,20 @@ hook.Add("PlayerInitialSpawn", "PlayerInitialSpawn_Damagelog", function(ply)
     end
 end)
 
+local dmgStrings = {
+    [DMG_BLAST] = "DMG_BLAST",
+    [DMG_DIRECT] = "DMG_BURN",
+    [DMG_BURN] = "DMG_BURN",
+    [DMG_CRUSH] = "DMG_CRUSH",
+    [DMG_FALL] = "DMG_CRUSH",
+    [DMG_SLASH] = "DMG_SLASH",
+    [DMG_CLUB] = "DMG_CLUB",
+    [DMG_SHOCK] = "DMG_SHOCK",
+    [DMG_ENERGYBEAM] = "DMG_ENERGYBEAM",
+    [DMG_SONIC] = "DMG_SONIC",
+    [DMG_PHYSGUN] = "DMG_PHYSGUN",
+}
+
 -- rip from TTT
 -- this one will return a string
 function Damagelog:WeaponFromDmg(dmg)
@@ -182,26 +202,11 @@ function Damagelog:WeaponFromDmg(dmg)
     local isWorldDamage = inf ~= nil and inf.IsWorld and inf:IsWorld()
 
     if IsValid(inf) or isWorldDamage then
+        local damageType = dmg:GetDamageType()
         if inf:IsWeapon() or inf.Projectile then
             wep = inf
-        elseif dmg:IsDamageType(DMG_BLAST) then
-            wep = "DMG_BLAST"
-        elseif dmg:IsDamageType(DMG_DIRECT) or dmg:IsDamageType(DMG_BURN) then
-            wep = "DMG_BURN"
-        elseif dmg:IsDamageType(DMG_CRUSH) or dmg:IsDamageType(DMG_FALL) then
-            wep = "DMG_CRUSH"
-        elseif dmg:IsDamageType(DMG_SLASH) then
-            wep = "DMG_SLASH"
-        elseif dmg:IsDamageType(DMG_CLUB) then
-            wep = "DMG_CLUB"
-        elseif dmg:IsDamageType(DMG_SHOCK) then
-            wep = "DMG_SHOCK"
-        elseif dmg:IsDamageType(DMG_ENERGYBEAM) then
-            wep = "DMG_ENERGYBEAM"
-        elseif dmg:IsDamageType(DMG_SONIC) then
-            wep = "DMG_SONIC"
-        elseif dmg:IsDamageType(DMG_PHYSGUN) then
-            wep = "DMG_PHYSGUN"
+        elseif dmgStrings[damageType] then
+            wep = dmgStrings[damageType]
         elseif inf:IsPlayer() then
             wep = inf:GetActiveWeapon()
 
@@ -211,7 +216,7 @@ function Damagelog:WeaponFromDmg(dmg)
         end
     end
 
-    if type(wep) ~= "string" then
+    if not isstring(wep) then
         return IsValid(wep) and wep:GetClass()
     else
         return wep
@@ -358,3 +363,5 @@ hook.Add("PlayerDeath", "Damagelog_PlayerDeathLastLogs", function(ply)
         roles = Damagelog.Roles[#Damagelog.Roles]
     }
 end)
+
+
