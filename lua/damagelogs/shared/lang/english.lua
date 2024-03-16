@@ -408,5 +408,6 @@ DamagelogLang.english = {
     rdmmanager_action_ban = "Ban",
     rdmmanager_action_ban_title = "Banning",
     rdmmanager_action_ban_submit = "Ban",
-    dmglogs_btn_highlight = "Highlight"
+    dmglogs_btn_highlight = "Highlight",
+    Author = "Tommy228"
 }

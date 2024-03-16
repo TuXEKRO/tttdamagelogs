@@ -408,5 +408,6 @@ DamagelogLang.chinese = {
     rdmmanager_action_ban = "封禁",
     rdmmanager_action_ban_title = "封禁",
     rdmmanager_action_ban_submit = "确定",
-    dmglogs_btn_highlight = "突出高亮"
+    dmglogs_btn_highlight = "突出高亮",
+    Author = "波と一緒に漂う"
 }

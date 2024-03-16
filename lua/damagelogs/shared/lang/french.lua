@@ -331,5 +331,6 @@ DamagelogLang.french = {
     color_kosradio = "Dénonciations radio",
     color_purchases = "Achats d'équipements",
     color_c4 = "C4",
-    color_team_kills = "Kills d'équipes"
+    color_team_kills = "Kills d'équipes",
+    Author = "Tommy228"
 }

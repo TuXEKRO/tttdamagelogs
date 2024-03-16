@@ -409,5 +409,6 @@ DamagelogLang.russian = {
     rdmmanager_action_ban = "Заблокировать",
     rdmmanager_action_ban_title = "Блокировка",
     rdmmanager_action_ban_submit = "Заблокировать",
-    dmglogs_btn_highlight = "Выделить"
+    dmglogs_btn_highlight = "Выделить",
+    Author = "Satton"
 }

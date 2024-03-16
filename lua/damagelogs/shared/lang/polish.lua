@@ -344,5 +344,6 @@ DamagelogLang.polish = {
     color_kosradio = "KOSy przez radio",
     color_purchases = "Zakupy ekwipuneku",
     color_c4 = "C4",
-    color_team_kills = "Zabójstwa sojuszników"
+    color_team_kills = "Zabójstwa sojuszników",
+    Author = "jakbu"
 }

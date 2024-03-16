@@ -128,8 +128,10 @@ function Damagelog:OpenMenu()
             surface.SetFont("DermaDefault")
             surface.SetTextColor(color_black)
             surface.SetTextPos(_x + 5, _y + 5)
-            surface.DrawText("Created by Tommy228.")
+            surface.DrawText("Created by Tommy228 & BadgerCode.")
             surface.SetTextPos(_x + 5, _y + 25)
+            surface.DrawText("Translate by ".. TTTLogTranslate(GetDMGLogLang, "Author") ..".")
+			surface.SetTextPos(_x + 5, _y + 45)
             surface.DrawText("Licensed under GPL-3.0.")
         end
     end

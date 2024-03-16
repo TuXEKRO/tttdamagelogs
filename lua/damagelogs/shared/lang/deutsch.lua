@@ -403,5 +403,6 @@ DamagelogLang.deutsch = {
     webhook_header_report_submitted = "Ein Report wurde eingereicht (ID %s)",
     webhook_header_report_forgiven = "Report vergeben (ID %s)",
     webhook_header_report_kept = "Report behalten (ID %s)",
-    webhook_header_report_finished = "Report beendet (ID %s)"
+    webhook_header_report_finished = "Report beendet (ID %s)",
+    Author = "MinIsMin"
 }
