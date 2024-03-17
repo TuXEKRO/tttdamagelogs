@@ -92,7 +92,7 @@ function Damagelog:OpenMenu()
     self.Menu:SetKeyboardInputEnabled(false)
     self.Menu:Center()
     self.Menu.AboutPos = 0
-    self.Menu.AboutPosMax = 35
+    self.Menu.AboutPosMax = 55
     self.Menu.AboutState = false
 
     self.Menu.About = function(self)
